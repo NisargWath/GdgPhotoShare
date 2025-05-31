@@ -1,0 +1,250 @@
+{% extends "base.html" %} {% block title %}{{ event.name }} - EventSnap{%
+endblock %} {% block content %}
+<div class="card">
+  <div
+    style="
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      margin-bottom: 2rem;
+    "
+  >
+    <div>
+      <h1 style="color: #667eea; margin-bottom: 0.5rem">{{ event.name }}</h1>
+      <p style="color: #666; margin-bottom: 1rem">{{ event.description }}</p>
+      <div style="display: flex; gap: 2rem; color: #888; font-size: 0.9rem">
+        <span>📅 {{ event.date }}</span>
+        <span>🏷️ {{ event.event_type.title() }}</span>
+        <span>👤 {{ event.created_by }}</span>
+        <span>📷 {{ photos|length }} photos</span>
+      </div>
+    </div>
+    <a href="{{ url_for('index') }}" class="btn btn-secondary">← Back</a>
+  </div>
+</div>
+
+<div class="card">
+  <h3 style="margin-bottom: 1.5rem; color: #667eea">📤 Upload Photos</h3>
+
+  <form
+    id="uploadForm"
+    enctype="multipart/form-data"
+    style="margin-bottom: 2rem"
+  >
+    <div class="form-group">
+      <label for="photos">Select Photos (multiple allowed)</label>
+      <input
+        type="file"
+        id="photos"
+        name="photos"
+        multiple
+        accept="image/*"
+        required
+        style="padding: 1rem; border: 2px dashed #667eea; background: #f8f9ff"
+      />
+    </div>
+
+    <div class="form-group">
+      <label for="uploaded_by">Your Name</label>
+      <input
+        type="text"
+        id="uploaded_by"
+        name="uploaded_by"
+        placeholder="Enter your name (optional)"
+      />
+    </div>
+
+    <button type="submit" class="btn">📸 Upload Photos</button>
+  </form>
+
+  <div id="uploadStatus"></div>
+</div>
+
+{% if photos %}
+<div class="card">
+  <h3 style="margin-bottom: 2rem; color: #667eea">🖼️ Photo Gallery</h3>
+
+  <div
+    style="
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 1.5rem;
+    "
+  >
+    {% for photo in photos %}
+    <div
+      class="photo-card"
+      style="
+        background: white;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        transition: transform 0.3s ease;
+      "
+    >
+      <img
+        src="{{ url_for('static', filename='uploads/' + photo.filename) }}"
+        alt="{{ photo.original_name }}"
+        style="width: 100%; height: 200px; object-fit: cover; cursor: pointer"
+        onclick="openImageModal(this.src, '{{ photo.original_name }}')"
+      />
+
+      <div style="padding: 1rem">
+        <p style="font-size: 0.9rem; color: #666; margin-bottom: 0.5rem">
+          📷 {{ photo.original_name }}
+        </p>
+        <div
+          style="
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+          "
+        >
+          <small style="color: #888">
+            by {{ photo.uploaded_by }}<br />
+            {{ photo.uploaded_at[:10] }}
+          </small>
+          <a
+            href="{{ url_for('delete_photo', photo_id=loop.index0) }}"
+            class="btn btn-danger"
+            style="padding: 0.25rem 0.5rem; font-size: 0.8rem"
+            onclick="return confirm('Delete this photo?')"
+            >🗑️</a
+          >
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% else %}
+<div class="card" style="text-align: center; padding: 4rem">
+  <h3 style="color: #667eea; margin-bottom: 1rem">📸 No Photos Yet!</h3>
+  <p style="color: #666">Be the first to share memories from this event</p>
+</div>
+{% endif %}
+
+<!-- Image Modal -->
+<div
+  id="imageModal"
+  style="
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.9);
+    cursor: pointer;
+  "
+  onclick="closeImageModal()"
+>
+  <div
+    style="
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      max-width: 90%;
+      max-height: 90%;
+    "
+  >
+    <img
+      id="modalImage"
+      style="max-width: 100%; max-height: 100%; border-radius: 10px"
+    />
+    <p
+      id="modalCaption"
+      style="
+        color: white;
+        text-align: center;
+        margin-top: 1rem;
+        font-size: 1.2rem;
+      "
+    ></p>
+  </div>
+  <div
+    style="
+      position: absolute;
+      top: 20px;
+      right: 30px;
+      color: white;
+      font-size: 40px;
+      font-weight: bold;
+      cursor: pointer;
+    "
+    onclick="closeImageModal()"
+  >
+    &times;
+  </div>
+</div>
+
+<style>
+  .photo-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  }
+</style>
+
+<script>
+  document.getElementById("uploadForm").onsubmit = function (e) {
+    e.preventDefault();
+
+    const formData = new FormData();
+    const photos = document.getElementById("photos").files;
+    const uploadedBy =
+      document.getElementById("uploaded_by").value || "Anonymous";
+
+    for (let i = 0; i < photos.length; i++) {
+      formData.append("photos", photos[i]);
+    }
+    formData.append("uploaded_by", uploadedBy);
+
+    const statusDiv = document.getElementById("uploadStatus");
+    statusDiv.innerHTML =
+      '<p style="color: #667eea;">⏳ Uploading photos...</p>';
+
+    fetch('{{ url_for("upload_photo", event_id=event_id) }}', {
+      method: "POST",
+      body: formData,
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.success) {
+          statusDiv.innerHTML =
+            '<p style="color: green;">✅ ' + data.success + "</p>";
+          setTimeout(() => location.reload(), 1500);
+        } else {
+          statusDiv.innerHTML =
+            '<p style="color: red;">❌ ' + data.error + "</p>";
+        }
+      })
+      .catch((error) => {
+        statusDiv.innerHTML = '<p style="color: red;">❌ Upload failed</p>';
+      });
+  };
+
+  function openImageModal(src, caption) {
+    document.getElementById("imageModal").style.display = "block";
+    document.getElementById("modalImage").src = src;
+    document.getElementById("modalCaption").textContent = caption;
+  }
+
+  function closeImageModal() {
+    document.getElementById("imageModal").style.display = "none";
+  }
+
+  // Add hover effect to photo cards
+  document.addEventListener("DOMContentLoaded", function () {
+    document.querySelectorAll(".photo-card").forEach((card) => {
+      card.addEventListener("mouseenter", () => {
+        card.style.transform = "translateY(-5px)";
+      });
+      card.addEventListener("mouseleave", () => {
+        card.style.transform = "translateY(0)";
+      });
+    });
+  });
+</script>
+{% endblock %}

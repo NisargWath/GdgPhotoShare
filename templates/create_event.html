@@ -1,0 +1,80 @@
+{% extends "base.html" %} {% block title %}Create New Event - EventSnap{%
+endblock %} {% block content %}
+<div class="card" style="max-width: 600px; margin: 2rem auto">
+  <h2
+    style="
+      text-align: center;
+      color: #667eea;
+      margin-bottom: 2rem;
+      font-size: 2.5rem;
+    "
+  >
+    🎪 Create New Event
+  </h2>
+
+  <form method="POST">
+    <div class="form-group">
+      <label for="name">Event Name *</label>
+      <input
+        type="text"
+        id="name"
+        name="name"
+        required
+        placeholder="e.g., College Fest 2024"
+      />
+    </div>
+
+    <div class="form-group">
+      <label for="description">Description</label>
+      <textarea
+        id="description"
+        name="description"
+        rows="4"
+        placeholder="Tell us about your event..."
+      ></textarea>
+    </div>
+
+    <div class="form-group">
+      <label for="event_type">Event Type *</label>
+      <select id="event_type" name="event_type" required>
+        <option value="">Select event type</option>
+        <option value="wedding">💒 Wedding</option>
+        <option value="birthday">🎂 Birthday Party</option>
+        <option value="concert">🎵 Concert</option>
+        <option value="festival">🎪 Festival</option>
+        <option value="graduation">🎓 Graduation</option>
+        <option value="corporate">🏢 Corporate Event</option>
+        <option value="sports">⚽ Sports Event</option>
+        <option value="family">👨‍👩‍👧‍👦 Family Gathering</option>
+        <option value="travel">✈️ Travel</option>
+        <option value="other">🎉 Other</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="date">Event Date *</label>
+      <input type="date" id="date" name="date" required />
+    </div>
+
+    <div class="form-group">
+      <label for="created_by">Your Name *</label>
+      <input
+        type="text"
+        id="created_by"
+        name="created_by"
+        required
+        placeholder="Enter your name"
+      />
+    </div>
+
+    <div style="text-align: center; margin-top: 2rem">
+      <button type="submit" class="btn" style="margin-right: 1rem">
+        🚀 Create Event
+      </button>
+      <a href="{{ url_for('index') }}" class="btn btn-secondary">
+        ← Back to Home
+      </a>
+    </div>
+  </form>
+</div>
+{% endblock %}

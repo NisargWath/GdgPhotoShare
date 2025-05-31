@@ -1,0 +1,98 @@
+{% extends "base.html" %} {% block content %}
+<div class="hero">
+  <h1>Where Memories Come Alive! 🎉</h1>
+  <p>
+    Share your event photos and create beautiful galleries that tell your story
+  </p>
+  <a href="{{ url_for('create_event') }}" class="btn"
+    >Create Your First Event</a
+  >
+</div>
+
+<div
+  style="
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+    margin-top: 3rem;
+  "
+>
+  {% for event in events %}
+  <div
+    class="card event-card"
+    style="transition: transform 0.3s ease; cursor: pointer"
+    onclick="window.location.href='{{ url_for('event_gallery', event_id=event.id) }}'"
+  >
+    <div
+      style="
+        display: flex;
+        justify-content: space-between;
+        align-items: start;
+        margin-bottom: 1rem;
+      "
+    >
+      <h3 style="color: #667eea; font-size: 1.5rem">{{ event.name }}</h3>
+      <span
+        style="
+          background: linear-gradient(45deg, #ff6b6b, #feca57);
+          color: white;
+          padding: 0.25rem 0.75rem;
+          border-radius: 15px;
+          font-size: 0.8rem;
+          font-weight: bold;
+        "
+      >
+        {{ event.event_type.title() }}
+      </span>
+    </div>
+
+    <p style="color: #666; margin-bottom: 1rem; line-height: 1.6">
+      {{ event.description }}
+    </p>
+
+    <div
+      style="
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        color: #888;
+        font-size: 0.9rem;
+      "
+    >
+      <span>📅 {{ event.date }}</span>
+      <span>📷 {{ event.photo_count }} photos</span>
+    </div>
+
+    <div
+      style="
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid #eee;
+        font-size: 0.8rem;
+        color: #999;
+      "
+    >
+      Created by {{ event.created_by }}
+    </div>
+  </div>
+  {% endfor %} {% if not events %}
+  <div
+    class="card"
+    style="grid-column: 1 / -1; text-align: center; padding: 4rem"
+  >
+    <h2 style="color: #667eea; margin-bottom: 1rem">No Events Yet!</h2>
+    <p style="color: #666; margin-bottom: 2rem">
+      Create your first event to start sharing memories
+    </p>
+    <a href="{{ url_for('create_event') }}" class="btn">Create Event</a>
+  </div>
+  {% endif %}
+</div>
+
+<style>
+  .event-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+  }
+</style>
+{% endblock %}
