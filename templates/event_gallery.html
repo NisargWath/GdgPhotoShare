@@ -19,7 +19,16 @@ endblock %} {% block content %}
         <span>📷 {{ photos|length }} photos</span>
       </div>
     </div>
-    <a href="{{ url_for('index') }}" class="btn btn-secondary">← Back</a>
+    <div style="display: flex; gap: 1rem">
+      <a
+        href="{{ url_for('logout', event_id=event_id) }}"
+        class="btn btn-danger"
+        style="padding: 0.5rem 1rem"
+      >
+        🔒 Logout
+      </a>
+      <a href="{{ url_for('index') }}" class="btn btn-secondary">← Back</a>
+    </div>
   </div>
 </div>
 

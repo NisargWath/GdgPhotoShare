@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session
 import os
 from datetime import datetime
 import uuid
@@ -44,6 +44,16 @@ def save_data(events, photos):
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
+def generate_access_key():
+    """Generate a simple 6-character access key"""
+    import random
+    import string
+    return ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
+
+def is_authenticated(event_id):
+    """Check if user is authenticated for this event"""
+    return session.get(f'auth_{event_id}', False)
+
 @app.route('/')
 def index():
     events, photos = load_data()
@@ -67,19 +77,25 @@ def create_event():
         events, photos = load_data()
         
         event_id = str(uuid.uuid4())
+        access_key = generate_access_key()
+        
         event_data = {
             'name': request.form['name'],
             'description': request.form['description'],
             'event_type': request.form['event_type'],
             'date': request.form['date'],
             'created_at': datetime.now().isoformat(),
-            'created_by': request.form['created_by']
+            'created_by': request.form['created_by'],
+            'access_key': access_key
         }
         
         events[event_id] = event_data
         save_data(events, photos)
         
-        flash(f'Event "{event_data["name"]}" created successfully!', 'success')
+        # Auto-authenticate the creator
+        session[f'auth_{event_id}'] = True
+        
+        flash(f'Event "{event_data["name"]}" created successfully! Access Key: {access_key}', 'success')
         return redirect(url_for('event_gallery', event_id=event_id))
     
     return render_template('create_event.html')
@@ -92,11 +108,36 @@ def event_gallery(event_id):
         flash('Event not found!', 'error')
         return redirect(url_for('index'))
     
+    # Check if user is authenticated
+    if not is_authenticated(event_id):
+        return redirect(url_for('authenticate', event_id=event_id))
+    
     event = events[event_id]
     event_photos = [p for p in photos.values() if p['event_id'] == event_id]
     event_photos.sort(key=lambda x: x['uploaded_at'], reverse=True)
     
     return render_template('event_gallery.html', event=event, photos=event_photos, event_id=event_id)
+
+@app.route('/auth/<event_id>', methods=['GET', 'POST'])
+def authenticate(event_id):
+    events, photos = load_data()
+    
+    if event_id not in events:
+        flash('Event not found!', 'error')
+        return redirect(url_for('index'))
+    
+    event = events[event_id]
+    
+    if request.method == 'POST':
+        entered_key = request.form['access_key'].strip().upper()
+        if entered_key == event['access_key']:
+            session[f'auth_{event_id}'] = True
+            flash('Access granted!', 'success')
+            return redirect(url_for('event_gallery', event_id=event_id))
+        else:
+            flash('Invalid access key!', 'error')
+    
+    return render_template('authenticate.html', event=event, event_id=event_id)
 
 @app.route('/upload/<event_id>', methods=['POST'])
 def upload_photo(event_id):
@@ -104,6 +145,10 @@ def upload_photo(event_id):
     
     if event_id not in events:
         return jsonify({'error': 'Event not found'}), 404
+    
+    # Check authentication
+    if not is_authenticated(event_id):
+        return jsonify({'error': 'Authentication required'}), 401
     
     if 'photos' not in request.files:
         return jsonify({'error': 'No files selected'}), 400
@@ -145,6 +190,11 @@ def delete_photo(photo_id):
         photo = photos[photo_id]
         event_id = photo['event_id']
         
+        # Check authentication
+        if not is_authenticated(event_id):
+            flash('Authentication required!', 'error')
+            return redirect(url_for('authenticate', event_id=event_id))
+        
         # Delete file
         file_path = os.path.join(app.config['UPLOAD_FOLDER'], photo['filename'])
         if os.path.exists(file_path):
@@ -160,6 +210,11 @@ def delete_photo(photo_id):
     flash('Photo not found!', 'error')
     return redirect(url_for('index'))
 
+@app.route('/logout/<event_id>')
+def logout(event_id):
+    session.pop(f'auth_{event_id}', None)
+    flash('Logged out successfully!', 'success')
+    return redirect(url_for('index'))
+
 if __name__ == "__main__":
     app.run(debug=True)
-
