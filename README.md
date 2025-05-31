@@ -1,4 +1,4 @@
-Here's a clean and professional **`README.md`** file for your Flask-based photo sharing web app project called **GdgPhotoShare**.
+
 
 ---
 
