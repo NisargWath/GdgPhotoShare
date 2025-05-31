@@ -122,7 +122,4 @@ LinkedIn: [@nisargwath](https://linkedin.com/in/nisargwath)
 
 ```
 
----
-
-Would you like me to generate a `requirements.txt` file for your current Flask setup as well?
 ```
